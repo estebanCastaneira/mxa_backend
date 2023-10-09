@@ -149,7 +149,7 @@ async function destroy(req, res) {
     const staff = await Staff.findByPk(req.params.id);
     if (staff) {
       await new Promise((resolve, reject) => {
-        fs.unlink(`/public/img/${staff.image}`, (error) => {
+        fs.unlink(`public/img/${staff.image}`, (error) => {
           if (error) {
             console.error("Error deleting image:", error);
             reject(error);
