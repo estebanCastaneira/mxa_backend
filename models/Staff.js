@@ -15,6 +15,9 @@ class Staff extends Model {
         lastname: {
           type: DataTypes.STRING,
         },
+        email: {
+          type: DataTypes.STRING,
+        },
         position_es: {
           type: DataTypes.STRING,
         },

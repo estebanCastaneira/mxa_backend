@@ -49,6 +49,7 @@ async function store(req, res) {
     const {
       firstname,
       lastname,
+      email,
       position_es,
       position_en,
       description_es,
@@ -59,6 +60,7 @@ async function store(req, res) {
     const staff = await Staff.create({
       firstname,
       lastname,
+      email,
       position_es,
       position_en,
       description_es,
@@ -103,6 +105,7 @@ async function update(req, res) {
     const {
       firstname,
       lastname,
+      email,
       position_es,
       position_en,
       description_es,
@@ -119,6 +122,7 @@ async function update(req, res) {
     }
     staff.firstname = firstname;
     staff.lastname = lastname;
+    staff.email = email;
     staff.position_es = position_es;
     staff.position_en = position_en;
     staff.description_es = description_es;
