@@ -1,6 +1,13 @@
 const { Staff } = require("../models");
 const formidable = require("formidable");
 const fs = require("fs");
+const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 // Display a listing of the resource.
 async function index(req, res) {
   try {
@@ -32,7 +39,6 @@ async function store(req, res) {
   try {
     const form = formidable({
       multiples: true,
-      uploadDir: "public/img/staff",
       keepExtensions: true,
     });
     const formPromise = new Promise((resolve, reject) => {
@@ -56,6 +62,8 @@ async function store(req, res) {
       description_en,
       linkedin,
     } = fields;
+    const ext = path.extname(files.image.filepath);
+    const newFileName = `img/staff/image_${Date.now()}${ext}`;
 
     const staff = await Staff.create({
       firstname,
@@ -65,9 +73,17 @@ async function store(req, res) {
       position_en,
       description_es,
       description_en,
-      image: "staff/" + files["image"].newFilename,
+      image: newFileName,
       linkedin,
     });
+    const photoData = fs.readFileSync(files.image.filepath);
+    const { data, error } = await supabase.storage
+      .from("assets")
+      .upload(newFileName, photoData, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: files.image.mimetype,
+      });
 
     return res.json({
       message: "Staff member created successfully.",
@@ -87,7 +103,6 @@ async function update(req, res) {
   try {
     const form = formidable({
       multiples: true,
-      uploadDir: "public/img/staff",
       keepExtensions: true,
     });
     const formPromise = new Promise((resolve, reject) => {
@@ -115,10 +130,20 @@ async function update(req, res) {
     } = fields;
     const staff = await Staff.findByPk(req.params.id);
     if (staff.image !== image) {
-      fs.unlink(`public/img/${staff.image}`, (error) => {
-        return error;
-      });
-      staff.image = "staff/" + files["image"].newFilename;
+      const ext = path.extname(files.image.filepath);
+      const newFileName = `img/staff/image_${Date.now()}${ext}`;
+      var { data, error } = await supabase.storage
+        .from("assets")
+        .remove(staff.image);
+      staff.image = newFileName;
+      const photoData = fs.readFileSync(files.image.filepath);
+      var { data, error } = await supabase.storage
+        .from("assets")
+        .upload(newFileName, photoData, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: files.image.mimetype,
+        });
     }
     staff.firstname = firstname;
     staff.lastname = lastname;
@@ -148,16 +173,9 @@ async function destroy(req, res) {
   try {
     const staff = await Staff.findByPk(req.params.id);
     if (staff) {
-      await new Promise((resolve, reject) => {
-        fs.unlink(`public/img/${staff.image}`, (error) => {
-          if (error) {
-            console.error("Error deleting image:", error);
-            reject(error);
-          } else {
-            resolve();
-          }
-        });
-      });
+      const { data, error } = await supabase.storage
+        .from("assets")
+        .remove(staff.image);
 
       await Staff.destroy({
         where: { id: staff.id },
